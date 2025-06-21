@@ -10,14 +10,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from weasyprint import HTML
 import io
+from contextlib import asynccontextmanager
 
 # Import models before anything else to ensure they are registered with Base
 import models
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code to run on startup
+    print("Application startup: Checking database...")
+    db = SessionLocal()
+    try:
+        # Check if tags already exist to prevent re-seeding
+        tags_exist = db.query(models.Tag).first()
+        if not tags_exist:
+            print("No tags found. Seeding initial tags.")
+            tags_to_create = ["Leadership", "Communication", "Teamwork", "Technical Skills", "Problem Solving"]
+            crud.get_or_create_tags(db, tags_to_create)
+            print("Initial tags seeded successfully.")
+        else:
+            print("Tags already exist in the database. Skipping seeding.")
+    finally:
+        db.close()
+    
+    yield
+    # Code to run on shutdown
+    print("Application shutdown.")
+
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # CORS middleware
 origins = [
