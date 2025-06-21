@@ -425,18 +425,30 @@ const ManagerDashboard = ({ user, setUser }) => {
               <option value="neutral">Neutral</option>
               <option value="negative">Negative</option>
             </select>
-                    <div style={{ marginBottom: '15px' }}>
-                      <label>Tags</label>
-                      <select 
-                        multiple 
-                        value={selectedTags} 
-                        onChange={(e) => setSelectedTags(Array.from(e.target.selectedOptions, option => option.value))}
-                        style={{ width: '100%', minHeight: '100px', padding: '8px' }}
-                      >
+                    <div style={{ marginTop: '10px' }}>
+                      <strong>Tags:</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '5px' }}>
                         {tags.map(tag => (
-                          <option key={tag.id} value={tag.id}>{tag.name}</option>
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => {
+                              const newSelectedTags = selectedTags.includes(tag.id)
+                                ? selectedTags.filter(id => id !== tag.id)
+                                : [...selectedTags, tag.id];
+                              setSelectedTags(newSelectedTags);
+                            }}
+                            style={{
+                              ...buttonStyle,
+                              backgroundColor: selectedTags.includes(tag.id) ? '#28a745' : '#6c757d',
+                              padding: '8px 12px',
+                              fontSize: '12px'
+                            }}
+                          >
+                            {tag.name}
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
                     <button 
                       type="submit" 
