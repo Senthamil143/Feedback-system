@@ -36,6 +36,7 @@ class User(Base):
     team_members = relationship("User", back_populates="manager")
     feedback_given = relationship("Feedback", foreign_keys='[Feedback.manager_id]', back_populates="manager")
     feedback_received = relationship("Feedback", foreign_keys='[Feedback.employee_id]', back_populates="employee")
+    acknowledgements = relationship("Acknowledgement", back_populates="employee")
 
 class Feedback(Base):
     __tablename__ = "feedback"
@@ -52,24 +53,26 @@ class Feedback(Base):
     manager = relationship("User", foreign_keys=[manager_id], back_populates="feedback_given")
     employee = relationship("User", foreign_keys=[employee_id], back_populates="feedback_received")
     acknowledgment = relationship("Acknowledgement", back_populates="feedback", uselist=False, cascade="all, delete-orphan")
-    tags = relationship("Tag", secondary=feedback_tags, back_populates="feedback")
+    tags = relationship("Tag", secondary=feedback_tags, back_populates="feedbacks")
 
 class Acknowledgement(Base):
     __tablename__ = "acknowledgements"
 
     id = Column(Integer, primary_key=True, index=True)
     feedback_id = Column(String, ForeignKey("feedback.id"))
+    employee_id = Column(String, ForeignKey("users.id"))
     acknowledged = Column(Boolean, default=False)
     comment = Column(String, nullable=True)
-    acknowledged_at = Column(DateTime, default=func.now())
+    acknowledged_at = Column(DateTime, nullable=True)
     
     feedback = relationship("Feedback", back_populates="acknowledgment")
+    employee = relationship("User", back_populates="acknowledgements")
 
 class Tag(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    feedback = relationship("Feedback", secondary=feedback_tags, back_populates="tags")
+    feedbacks = relationship("Feedback", secondary=feedback_tags, back_populates="tags")
 
 class FeedbackRequest(Base):
     __tablename__ = "feedback_requests"

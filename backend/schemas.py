@@ -11,8 +11,8 @@ class TagCreate(TagBase):
 
 class Tag(TagBase):
     id: int
-    class ConfigDict:
-        from_attributes = True
+
+    model_config = ConfigDict(orm_mode=True)
 
 class UserBase(BaseModel):
     name: str
@@ -26,8 +26,8 @@ class UserCreate(UserBase):
 class UserOut(UserBase):
     id: str
     manager_id: Optional[str] = None
-    class ConfigDict:
-        from_attributes = True
+
+    model_config = ConfigDict(orm_mode=True)
 
 class EmployeeInfo(BaseModel):
     id: str
@@ -52,8 +52,8 @@ class AcknowledgementOut(BaseModel):
     acknowledged: bool
     comment: Optional[str]
     acknowledged_at: datetime
-    class ConfigDict:
-        from_attributes = True
+
+    model_config = ConfigDict(orm_mode=True)
 
 class FeedbackOut(FeedbackBase):
     id: str
@@ -61,10 +61,11 @@ class FeedbackOut(FeedbackBase):
     manager_id: str
     created_at: datetime
     updated_at: datetime
+    employee: Optional[UserOut] = None
     acknowledgment: Optional[AcknowledgementOut] = None
     tags: List[Tag] = []
-    class ConfigDict:
-        from_attributes = True
+
+    model_config = ConfigDict(orm_mode=True)
 
 class AcknowledgementIn(BaseModel):
     comment: Optional[str] = None
@@ -82,8 +83,8 @@ class FeedbackRequestOut(FeedbackRequestBase):
     created_at: datetime
     is_open: bool
     employee: UserOut
-    class ConfigDict:
-        from_attributes = True
+
+    model_config = ConfigDict(orm_mode=True)
 
 class Token(BaseModel):
     access_token: str

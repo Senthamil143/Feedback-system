@@ -72,13 +72,20 @@ def create_feedback(db: Session, feedback: schemas.FeedbackCreate, manager_id: s
     return db_feedback
 
 def get_feedback_for_manager(db: Session, manager_id: str):
-    return db.query(models.Feedback).filter(models.Feedback.manager_id == manager_id).options(joinedload(models.Feedback.tags)).all()
+    return db.query(models.Feedback).filter(models.Feedback.manager_id == manager_id).options(
+        joinedload(models.Feedback.employee),
+        joinedload(models.Feedback.tags),
+        joinedload(models.Feedback.acknowledgment)
+    ).all()
 
-def acknowledge_feedback(db: Session, feedback_id: str, comment: str):
-    db_acknowledgement = db.query(models.Acknowledgement).filter(models.Acknowledgement.feedback_id == feedback_id).first()
+def acknowledge_feedback(db: Session, feedback_id: str, employee_id: str, comment: Optional[str] = None):
+    db_acknowledgement = db.query(models.Acknowledgement).filter_by(feedback_id=feedback_id, employee_id=employee_id).first()
 
     if not db_acknowledgement:
-        db_acknowledgement = models.Acknowledgement(feedback_id=feedback_id)
+        db_acknowledgement = models.Acknowledgement(
+            feedback_id=feedback_id,
+            employee_id=employee_id
+        )
         db.add(db_acknowledgement)
 
     db_acknowledgement.acknowledged = True
@@ -87,19 +94,6 @@ def acknowledge_feedback(db: Session, feedback_id: str, comment: str):
     db.commit()
     db.refresh(db_acknowledgement)
     return db_acknowledgement
-
-def get_acknowledgement(db: Session, feedback_id: str, user_id: str):
-    return db.query(models.Acknowledgement).filter(
-        models.Acknowledgement.feedback_id == feedback_id, 
-        models.Acknowledgement.employee_id == user_id
-    ).first()
-
-def get_feedback_with_acknowledgements(db: Session, manager_id: str):
-    """Get feedback with acknowledgment information for managers"""
-    return db.query(models.Feedback).options(
-        joinedload(models.Feedback.employee),
-        joinedload(models.Feedback.acknowledgements)
-    ).filter(models.Feedback.manager_id == manager_id).all()
 
 def get_employee_feedback_with_acknowledgements(db: Session, employee_id: str):
     """Get feedback with acknowledgment information for employees"""
@@ -116,7 +110,7 @@ def get_feedback_by_id(db: Session, feedback_id: str):
 def update_feedback(db: Session, feedback_id: str, feedback_update: schemas.FeedbackUpdate):
     db_feedback = db.query(models.Feedback).filter(models.Feedback.id == feedback_id).first()
     if db_feedback:
-        update_data = feedback_update.dict(exclude_unset=True)
+        update_data = feedback_update.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_feedback, key, value)
         db_feedback.updated_at = datetime.utcnow()
@@ -127,7 +121,7 @@ def update_feedback(db: Session, feedback_id: str, feedback_update: schemas.Feed
 def get_manager_dashboard_stats(db: Session, manager_id: str):
     """Get comprehensive dashboard statistics including acknowledgments"""
     feedbacks = db.query(models.Feedback).options(
-        joinedload(models.Feedback.acknowledgements)
+        joinedload(models.Feedback.acknowledgment)
     ).filter(models.Feedback.manager_id == manager_id).all()
     
     count = len(feedbacks)
@@ -136,7 +130,7 @@ def get_manager_dashboard_stats(db: Session, manager_id: str):
     
     for fb in feedbacks:
         sentiments[fb.sentiment.value] += 1
-        if fb.acknowledgements and len(fb.acknowledgements) > 0:
+        if fb.acknowledgment:
             acknowledged_count += 1
     
     return {

@@ -37,17 +37,22 @@ const EmployeeDashboard = ({ user, setUser }) => {
   };
 
   useEffect(() => {
-    fetchTimeline();
-  }, [user && user.id]);
+    if (user && user.id) {
+      fetchTimeline();
+    }
+  }, [user?.id]);
 
-  const acknowledge = async (id) => {
-    if (!user || !user.id) return;
+  const acknowledge = async (id, comment) => {
     setAcknowledging(prev => ({ ...prev, [id]: true }));
-    
     try {
-      await acknowledgeFeedback(id, user.id, 'Got it!');
-      alert('Feedback acknowledged successfully!');
-      fetchTimeline(); // Refresh timeline
+      const newAck = await acknowledgeFeedback(id, comment);
+      setTimeline(prevTimeline => 
+        prevTimeline.map(fb => 
+          fb.id === id 
+            ? { ...fb, acknowledgment: newAck }
+            : fb
+        )
+      );
     } catch (error) {
       console.error('Error acknowledging feedback:', error);
       alert('Failed to acknowledge feedback. Please try again.');
@@ -57,18 +62,7 @@ const EmployeeDashboard = ({ user, setUser }) => {
   };
 
   const isAcknowledged = (feedback) => {
-    if (!feedback.acknowledgements || feedback.acknowledgements.length === 0) {
-      return false;
-    }
-    // Check if current user has acknowledged this feedback
-    return feedback.acknowledgements.some(ack => ack.employee_id === user?.id && ack.acknowledged);
-  };
-
-  const getAcknowledgmentInfo = (feedback) => {
-    if (!feedback.acknowledgements || feedback.acknowledgements.length === 0) {
-      return null;
-    }
-    return feedback.acknowledgements.find(ack => ack.employee_id === user?.id);
+    return feedback.acknowledgment && feedback.acknowledgment.acknowledged;
   };
 
   const handleRequestFeedback = async () => {
@@ -133,13 +127,18 @@ const EmployeeDashboard = ({ user, setUser }) => {
   };
 
   const acknowledgmentBadgeStyle = {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
     backgroundColor: '#28a745',
     color: 'white',
     padding: '4px 8px',
     borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: 'bold'
+  };
+
+  const sentimentBadgeStyle = {
+    padding: '6px 12px', 
+    borderRadius: '20px', 
+    color: 'white',
     fontSize: '12px',
     fontWeight: 'bold'
   };
@@ -212,18 +211,26 @@ const EmployeeDashboard = ({ user, setUser }) => {
                     </h2>
                     {timeline.map(fb => {
                       const acknowledged = isAcknowledged(fb);
-                      const ackInfo = getAcknowledgmentInfo(fb);
+                      const ackInfo = fb.acknowledgment;
                       
                       return (
                         <div key={fb.id} style={{
                           ...feedbackCardStyle,
                           ...(acknowledged ? acknowledgedStyle : {})
                         }}>
-                          {acknowledged && (
-                            <div style={acknowledgmentBadgeStyle}>
-                              ✓ Acknowledged
-                            </div>
-                          )}
+                          <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            {acknowledged && (
+                              <div style={{...acknowledgmentBadgeStyle, position: 'static' }}>
+                                ✓ Acknowledged
+                              </div>
+                            )}
+                             <span style={{ 
+                                ...sentimentBadgeStyle,
+                                backgroundColor: sentimentColors[fb.sentiment],
+                              }}>
+                                {sentimentLabels[fb.sentiment]}
+                              </span>
+                          </div>
                           
                           <div style={{ 
                             display: 'flex', 
@@ -255,19 +262,9 @@ const EmployeeDashboard = ({ user, setUser }) => {
                                 </div>
                               )}
                             </div>
-                            <span style={{ 
-                              padding: '6px 12px', 
-                              borderRadius: '20px', 
-                              backgroundColor: sentimentColors[fb.sentiment],
-                              color: 'white',
-                              fontSize: '12px',
-                              fontWeight: 'bold'
-                            }}>
-                              {sentimentLabels[fb.sentiment]}
-                            </span>
                           </div>
                           
-                          <div style={{ marginBottom: '15px' }}>
+                          <div style={{ marginBottom: '15px', paddingTop: '20px' }}>
                             <h4 style={{ color: '#28a745', margin: '0 0 8px 0' }}>Strengths</h4>
                             <div style={{ paddingLeft: '15px' }}><ReactMarkdown>{fb.strengths}</ReactMarkdown></div>
                           </div>
@@ -293,53 +290,39 @@ const EmployeeDashboard = ({ user, setUser }) => {
                               </div>
                           )}
                           
-                          {acknowledged && ackInfo && (
+                          {!acknowledged ? (
+                            <div style={{ marginTop: '20px' }}>
+                              <textarea
+                                placeholder="Add an optional comment..."
+                                onChange={(e) => setAckComment(e.target.value)}
+                                style={{ width: '100%', minHeight: '60px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', marginBottom: '10px' }}
+                              />
+                              <button 
+                                onClick={() => acknowledge(fb.id, ackComment)}
+                                disabled={acknowledging[fb.id]}
+                                style={buttonStyle}
+                              >
+                                {acknowledging[fb.id] ? 'Acknowledging...' : 'Acknowledge Feedback'}
+                              </button>
+                            </div>
+                          ) : (
                             <div style={{ 
-                              marginBottom: '15px', 
+                              marginTop: '20px', 
                               padding: '10px', 
                               backgroundColor: '#e8f5e8', 
                               borderRadius: '4px',
-                              border: '1px solid #28a745'
+                              border: '1px solid #c8e6c9'
                             }}>
-                              <strong>Acknowledged on:</strong> {ackInfo.acknowledged_at ? 
-                                new Date(ackInfo.acknowledged_at + 'Z').toLocaleString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  timeZone: 'Asia/Kolkata'
-                                }) + ' IST' : 'Unknown date'}
-                              {ackInfo.comment && (
-                                <div style={{ marginTop: '5px' }}>
-                                  <strong>Comment:</strong>
-                                  <div style={{ paddingLeft: '15px' }}><ReactMarkdown>{ackInfo.comment}</ReactMarkdown></div>
-                                </div>
+                              <p style={{ margin: 0, fontWeight: 'bold', color: '#2e7d32' }}>
+                                You acknowledged this on {ackInfo && new Date(ackInfo.acknowledged_at + 'Z').toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' })}.
+                              </p>
+                              {ackInfo && ackInfo.comment && (
+                                <p style={{ margin: '8px 0 0', fontStyle: 'italic', color: '#555' }}>
+                                  Your comment: "{ackInfo.comment}"
+                                </p>
                               )}
                             </div>
                           )}
-                          
-                          <div style={{ marginTop: '20px' }}>
-                              <button 
-                                  onClick={() => exportFeedbackToPdf(fb.id)}
-                                  style={{ backgroundColor: '#6c757d', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' }}
-                              >
-                                  Export to PDF
-                              </button>
-                          </div>
-                          
-                          <button 
-                            onClick={() => acknowledge(fb.id)}
-                            disabled={acknowledging[fb.id] || acknowledged}
-                            style={{
-                              ...(acknowledged ? acknowledgedButtonStyle : buttonStyle),
-                              opacity: acknowledging[fb.id] ? 0.7 : 1,
-                              cursor: (acknowledging[fb.id] || acknowledged) ? 'not-allowed' : 'pointer'
-                            }}
-                          >
-                            {acknowledging[fb.id] ? 'Acknowledging...' : 
-                             acknowledged ? 'Already Acknowledged' : 'Acknowledge Feedback'}
-                          </button>
                         </div>
                       );
                     })}

@@ -42,68 +42,54 @@ export async function getUserByEmail(email) {
 }
 
 export async function submitFeedback(feedback, request_id = null) {
-  const response = await fetch(`${API_BASE_URL}/feedback/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  return makeAuthenticatedRequest('/feedback/', {
+    method: 'POST',
     body: JSON.stringify(feedback),
   });
-  return handleResponse(response);
 }
 
 export async function getFeedbackForEmployee() {
-  const response = await fetch(`${API_BASE_URL}/feedback/employee/`);
-  return handleResponse(response);
+  return makeAuthenticatedRequest('/feedback/employee/');
 }
 
-export async function getFeedbackByManager(managerId) {
-  const response = await fetch(`${API_BASE_URL}/feedback/manager/${managerId}`);
-  return handleResponse(response);
+export async function getFeedbackForManager() {
+    return makeAuthenticatedRequest('/feedback/manager/');
 }
 
 export async function getFeedbackById(feedbackId) {
-  const response = await fetch(`${API_BASE_URL}/feedback/${feedbackId}`);
-  return handleResponse(response);
+  return makeAuthenticatedRequest(`/feedback/${feedbackId}`);
 }
 
-export async function updateFeedback(feedbackId, feedbackData, managerId) {
-  const response = await fetch(`${API_BASE_URL}/feedback/${feedbackId}?manager_id=${managerId}`, {
+export async function updateFeedback(feedbackId, feedbackData) {
+  return makeAuthenticatedRequest(`/feedback/${feedbackId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(feedbackData),
   });
-  return handleResponse(response);
 }
 
-export async function acknowledgeFeedback(feedbackId, employeeId, comment) {
-  const response = await fetch(`${API_BASE_URL}/feedback/${feedbackId}/acknowledge?employee_id=${employeeId}`, {
+export async function acknowledgeFeedback(feedbackId, comment) {
+  return makeAuthenticatedRequest(`/feedback/${feedbackId}/acknowledge`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ comment }),
   });
-  return handleResponse(response);
 }
 
 export async function getAcknowledgementStatus(feedbackId, employeeId) {
-  const response = await fetch(`${API_BASE_URL}/feedback/${feedbackId}/acknowledgement/${employeeId}`);
-  return handleResponse(response);
+  return makeAuthenticatedRequest(`/feedback/${feedbackId}/acknowledgement/${employeeId}`);
 }
 
 export async function getTeamMembers(managerId) {
-  const response = await fetch(`${API_BASE_URL}/manager/${managerId}/team`);
-  return handleResponse(response);
+  return makeAuthenticatedRequest(`/manager/${managerId}/team`);
 }
 
 export async function getAvailableEmployees(managerId) {
-  const response = await fetch(`${API_BASE_URL}/manager/${managerId}/available-employees`);
-  return handleResponse(response);
+  return makeAuthenticatedRequest(`/manager/${managerId}/available-employees`);
 }
 
 export async function assignEmployeeToManager(managerId, employeeId) {
-  const response = await fetch(`${API_BASE_URL}/manager/${managerId}/assign-employee/${employeeId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  return makeAuthenticatedRequest(`/manager/${managerId}/assign-employee/${employeeId}`, {
+    method: "POST"
   });
-  return handleResponse(response);
 }
 
 export async function getManagerDashboard(managerId) {
@@ -111,12 +97,7 @@ export async function getManagerDashboard(managerId) {
 }
 
 export async function getEmployeeDashboard(employeeId) {
-  const response = await fetch(`${API_BASE_URL}/feedback/employee/${employeeId}`);
-  return handleResponse(response);
-}
-
-export async function getFeedbackForManager() {
-    return makeAuthenticatedRequest('/feedback/manager/');
+  return makeAuthenticatedRequest(`/dashboard/employee/${employeeId}`);
 }
 
 export async function getPendingRequests() {

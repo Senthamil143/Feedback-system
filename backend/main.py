@@ -24,6 +24,8 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "http://localhost:5174",
+    "http://localhost:5175",
 ]
 
 app.add_middleware(
@@ -51,11 +53,12 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    user.password = auth.get_password_hash(user.password)
     return crud.create_user(db=db, user=user)
 
 @app.get("/manager/{manager_id}/team", response_model=List[schemas.UserOut])
-def get_team_members(manager_id: str, db: Session = Depends(get_db)):
+def get_team_members(manager_id: str, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(auth.get_current_user)):
+    if manager_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to view this team")
     # Now returns only employees assigned to this specific manager
     return crud.get_team_members(db, manager_id)
 
@@ -95,22 +98,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     user = crud.get_user_by_email(db, email=form_data.username)
     
     if not user:
-        print(f"User not found, creating new user: {form_data.username}")
-        # Create a new user if they don't exist
-        from schemas import UserCreate, RoleEnum
-        new_user_data = UserCreate(
-            email=form_data.username,
-            name=form_data.username.split('@')[0],  # Use email prefix as name
-            password=form_data.password,
-            role=RoleEnum.employee  # Default to employee role
-        )
-        user = crud.create_user(db=db, user=new_user_data)
-        print(f"Created new user: {user.email}")
-    else:
-        print(f"Found existing user: {user.email}")
+        raise HTTPException(status_code=404, detail="User not found, please register first.")
     
     # Verify password using local pwd_context
-    if not pwd_context.verify(form_data.password, user.hashed_password):
+    if not auth.verify_password(form_data.password, user.hashed_password):
         print(f"Password verification failed for user: {form_data.username}")
         print(f"Input password: {form_data.password}")
         print(f"Stored hash: {user.hashed_password}")
@@ -186,18 +177,6 @@ def get_feedback_by_id(feedback_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Feedback not found")
     return feedback
 
-@app.get("/feedback/{feedback_id}/acknowledgement/{employee_id}")
-def get_acknowledgement_status(feedback_id: str, employee_id: str, db: Session = Depends(get_db)):
-    """Get acknowledgment status for a specific feedback and employee"""
-    ack = crud.get_acknowledgement_status(db, feedback_id, employee_id)
-    if not ack:
-        return {"acknowledged": False, "comment": None, "acknowledged_at": None}
-    return {
-        "acknowledged": ack.acknowledged,
-        "comment": ack.comment,
-        "acknowledged_at": ack.acknowledged_at
-    }
-
 @app.put("/feedback/{feedback_id}", response_model=schemas.FeedbackOut)
 def update_feedback(
     feedback_id: str,
@@ -225,7 +204,12 @@ def acknowledge_feedback(
     if not feedback or feedback.employee_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to acknowledge this feedback")
 
-    db_ack = crud.acknowledge_feedback(db, feedback_id=feedback_id, comment=acknowledgement.comment)
+    db_ack = crud.acknowledge_feedback(
+        db, 
+        feedback_id=feedback_id, 
+        employee_id=current_user.id,
+        comment=acknowledgement.comment
+    )
     if db_ack is None:
         raise HTTPException(status_code=404, detail="Acknowledgement failed")
     return db_ack
@@ -310,13 +294,17 @@ def export_feedback_to_pdf(
 
 # --- Dashboard Endpoints ---
 @app.get("/dashboard/manager/{manager_id}")
-def get_manager_dashboard(manager_id: str, db: Session = Depends(get_db)):
+def get_manager_dashboard(manager_id: str, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(auth.get_current_user)):
+    if manager_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to view this dashboard")
     # This is just an example, you might want a more complex dashboard
     feedbacks = crud.get_feedback_for_manager(db, manager_id)
     return {"timeline": feedbacks}
 
 @app.get("/dashboard/employee/{employee_id}")
-def employee_dashboard(employee_id: str, db: Session = Depends(get_db)):
+def employee_dashboard(employee_id: str, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(auth.get_current_user)):
+    if employee_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to view this dashboard")
     feedbacks = crud.get_feedback_for_employee(db, employee_id)
     return {"timeline": feedbacks}
 
