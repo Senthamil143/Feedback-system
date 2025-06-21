@@ -86,42 +86,43 @@ const ManagerDashboard = ({ user, setUser }) => {
   };
 
   useEffect(() => {
-    fetchData();
-    fetchTags();
-  }, [fetchData]);
+    if (user && user.id) {
+      fetchData();
+      fetchTags();
+    }
+  }, [user?.id]);
 
   const handleRefreshAvailable = async () => {
-    await fetchAvailableEmployees();
-    alert("Refreshed available employee list.");
+    await fetchData(); 
+    alert("Refreshed all dashboard data.");
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user || !user.id) return;
+    if (!user || !user.id || !form.employee_id) {
+      alert("Please select an employee.");
+      return;
+    }
     setSubmitting(true);
     
     try {
       const feedbackData = {
         strengths: form.strengths,
-        improvements: form.improvements,
+        areas_to_improve: form.improvements,
         sentiment: form.sentiment,
         employee_id: form.employee_id,
         tag_ids: selectedTags,
       };
       
-      const url = form.request_id ? `/feedback/?request_id=${form.request_id}` : '/feedback/';
-
-      await makeAuthenticatedRequest(url, {
-        method: 'POST',
-        body: JSON.stringify(feedbackData),
-      });
+      await submitFeedback(feedbackData, form.request_id);
 
       alert('Feedback submitted successfully!');
       setForm({ employee_id: '', strengths: '', improvements: '', sentiment: 'positive', request_id: null });
       setSelectedTags([]);
       fetchData(); // Refresh all dashboard data
     } catch (error) {
-      alert('Failed to submit feedback. Please try again.');
+      console.error("Submission Error:", error);
+      alert(error.message || 'Failed to submit feedback. Please try again.');
     } finally {
       setSubmitting(false);
     }
