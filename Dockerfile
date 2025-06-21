@@ -1,8 +1,23 @@
 # Use Python base image
 FROM python:3.11-slim
 
-# Install Node.js and npm for frontend build
-RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
+# Install Node.js, npm, and system dependencies for WeasyPrint
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+    libpango-1.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0 \
+    libffi-dev \
+    libjpeg-dev \
+    libopenjp2-7-dev \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set workdir for backend
 WORKDIR /app
