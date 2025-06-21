@@ -11,30 +11,48 @@ from fastapi.responses import StreamingResponse
 from weasyprint import HTML
 import io
 from contextlib import asynccontextmanager
+import time
 
 # Import models before anything else to ensure they are registered with Base
 import models
 
+# Define a lock file path
+LOCK_FILE = "db_seed.lock"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Code to run on startup
-    print("Application startup: Checking database...")
-    db = SessionLocal()
-    try:
-        # Check if tags already exist to prevent re-seeding
-        tags_exist = db.query(models.Tag).first()
-        if not tags_exist:
-            print("No tags found. Seeding initial tags.")
-            tags_to_create = ["Leadership", "Communication", "Teamwork", "Technical Skills", "Problem Solving"]
-            crud.get_or_create_tags(db, tags_to_create)
-            print("Initial tags seeded successfully.")
-        else:
-            print("Tags already exist in the database. Skipping seeding.")
-    finally:
-        db.close()
-    
+    # --- Startup ---
+    # This check is to ensure seeding only runs in one worker process
+    if not os.path.exists(LOCK_FILE):
+        # Create the lock file to prevent other workers from running this
+        with open(LOCK_FILE, "w") as f:
+            f.write("locked")
+        
+        print("Application startup: Acquired lock, checking database...")
+        db = SessionLocal()
+        try:
+            # Check if tags already exist to prevent re-seeding
+            tags_exist = db.query(models.Tag).first()
+            if not tags_exist:
+                print("No tags found. Seeding initial tags.")
+                tags_to_create = ["Leadership", "Communication", "Teamwork", "Technical Skills", "Problem Solving"]
+                crud.get_or_create_tags(db, tags_to_create)
+                print("Initial tags seeded successfully.")
+            else:
+                print("Tags already exist in the database. Skipping seeding.")
+        finally:
+            db.close()
+            # Remove the lock file so startup can run on next deploy
+            if os.path.exists(LOCK_FILE):
+                os.remove(LOCK_FILE)
+            print("Lock released.")
+    else:
+        print("Startup lock found, another worker is handling seeding. Waiting...")
+        # Optional: wait a moment for the seeding to complete
+        time.sleep(5)
+
     yield
-    # Code to run on shutdown
+    # --- Shutdown ---
     print("Application shutdown.")
 
 # Create tables
