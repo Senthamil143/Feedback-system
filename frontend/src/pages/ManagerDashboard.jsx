@@ -1,6 +1,23 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTeamMembers, getAvailableEmployees, assignEmployeeToManager, submitFeedback, getManagerDashboard, updateFeedback, getTags, getFeedbackRequests, getFeedbackForManager, getPendingRequests, createFeedback, addComment, createTag, exportFeedbackToPdf, approveRequest, denyRequest, makeAuthenticatedRequest } from '../utils/api';
+import { 
+  getTeamMembers, 
+  getAvailableEmployees, 
+  assignEmployeeToManager, 
+  submitFeedback, 
+  getManagerDashboard, 
+  updateFeedback, 
+  getTags, 
+  getFeedbackRequests, 
+  getFeedbackForManager, 
+  getPendingRequests, 
+  createFeedback, 
+  addComment, 
+  createTag, 
+  exportFeedbackToPdf, 
+  approveRequest, 
+  denyRequest 
+} from '../utils/api';
 import ReactMarkdown from 'react-markdown';
 import Header from '../components/Header';
 
