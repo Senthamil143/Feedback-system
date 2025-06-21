@@ -108,7 +108,7 @@ const ManagerDashboard = ({ user, setUser }) => {
     try {
       const feedbackData = {
         strengths: form.strengths,
-        areas_to_improve: form.improvements,
+        improvements: form.improvements,
         sentiment: form.sentiment,
         employee_id: form.employee_id,
         tag_ids: selectedTags,
