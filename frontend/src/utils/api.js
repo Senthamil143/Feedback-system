@@ -1,6 +1,22 @@
-console.log('API file loaded successfully');
+import axios from 'axios';
 
-export const API_BASE_URL = "http://localhost:8000"; // Point to backend server
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+api.interceptors.request.use(config => {
+  console.log('API file loaded successfully');
+
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
 
 async function handleResponse(response) {
   if (!response.ok) {
@@ -19,197 +35,127 @@ async function handleResponse(response) {
 
 export async function login(email, password) {
   console.log('Login function called with:', email);
-  const response = await fetch(`${API_BASE_URL}/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+  const response = await api.post('/token', {
+    username: email,
+    password: password,
   });
   return handleResponse(response);
 }
 
 export async function createUser(data) {
-  const response = await fetch(`${API_BASE_URL}/users/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  const response = await api.post('/users/', data);
   return handleResponse(response);
 }
 
 export async function getUserByEmail(email) {
-  const response = await fetch(`${API_BASE_URL}/users/by_email/${encodeURIComponent(email)}`);
+  const response = await api.get('/users/by_email/' + encodeURIComponent(email));
   return handleResponse(response);
 }
 
 export async function submitFeedback(feedback, request_id = null) {
-  return makeAuthenticatedRequest('/feedback/', {
-    method: 'POST',
-    body: JSON.stringify(feedback),
-  });
+  return api.post('/feedback/', feedback);
 }
 
 export async function getFeedbackForEmployee() {
-  return makeAuthenticatedRequest('/feedback/employee/');
+  return api.get('/feedback/employee/');
 }
 
 export async function getFeedbackForManager() {
-    return makeAuthenticatedRequest('/feedback/manager/');
+  return api.get('/feedback/manager/');
 }
 
 export async function getFeedbackById(feedbackId) {
-  return makeAuthenticatedRequest(`/feedback/${feedbackId}`);
+  return api.get('/feedback/' + feedbackId);
 }
 
 export async function updateFeedback(feedbackId, feedbackData) {
-  return makeAuthenticatedRequest(`/feedback/${feedbackId}`, {
-    method: "PUT",
-    body: JSON.stringify(feedbackData),
-  });
+  return api.put('/feedback/' + feedbackId, feedbackData);
 }
 
 export async function acknowledgeFeedback(feedbackId, comment) {
-  return makeAuthenticatedRequest(`/feedback/${feedbackId}/acknowledge`, {
-    method: "POST",
-    body: JSON.stringify({ comment }),
-  });
+  return api.post('/feedback/' + feedbackId + '/acknowledge', { comment });
 }
 
 export async function getAcknowledgementStatus(feedbackId, employeeId) {
-  return makeAuthenticatedRequest(`/feedback/${feedbackId}/acknowledgement/${employeeId}`);
+  return api.get('/feedback/' + feedbackId + '/acknowledgement/' + employeeId);
 }
 
 export async function getTeamMembers(managerId) {
-  return makeAuthenticatedRequest(`/manager/${managerId}/team`);
+  return api.get('/manager/' + managerId + '/team');
 }
 
 export async function getAvailableEmployees(managerId) {
-  return makeAuthenticatedRequest(`/manager/${managerId}/available-employees`);
+  return api.get('/manager/' + managerId + '/available-employees');
 }
 
 export async function assignEmployeeToManager(managerId, employeeId) {
-  return makeAuthenticatedRequest(`/manager/${managerId}/assign-employee/${employeeId}`, {
-    method: "POST"
-  });
+  return api.post('/manager/' + managerId + '/assign-employee/' + employeeId);
 }
 
 export async function getManagerDashboard(managerId) {
-  return makeAuthenticatedRequest('/dashboard/manager-stats/');
+  return api.get('/dashboard/manager-stats/');
 }
 
 export async function getEmployeeDashboard(employeeId) {
-  return makeAuthenticatedRequest(`/dashboard/employee/${employeeId}`);
+  return api.get('/dashboard/employee/' + employeeId);
 }
 
 export async function getPendingRequests() {
-    return makeAuthenticatedRequest('/feedback-requests/pending/');
+  return api.get('/feedback-requests/pending/');
 }
 
 export async function createFeedback(feedbackData) {
-    return makeAuthenticatedRequest('/feedback/', {
-        method: 'POST',
-        body: JSON.stringify(feedbackData),
-    });
+  return api.post('/feedback/', feedbackData);
 }
 
 export async function addComment(feedbackId, comment) {
-    return makeAuthenticatedRequest(`/feedback/${feedbackId}/comments/`, {
-        method: 'POST',
-        body: JSON.stringify({ comment }),
-    });
+  return api.post('/feedback/' + feedbackId + '/comments/', { comment });
 }
 
 export async function createTag(tagData) {
-    return makeAuthenticatedRequest('/tags/', {
-        method: 'POST',
-        body: JSON.stringify(tagData),
-    });
+  return api.post('/tags/', tagData);
 }
 
 export async function approveRequest(requestId) {
-    return makeAuthenticatedRequest(`/feedback-requests/${requestId}/approve`, {
-        method: 'POST',
-    });
+  return api.post('/feedback-requests/' + requestId + '/approve');
 }
 
 export async function denyRequest(requestId) {
-    return makeAuthenticatedRequest(`/feedback-requests/${requestId}/deny`, {
-        method: 'POST',
-    });
+  return api.post('/feedback-requests/' + requestId + '/deny');
 }
 
 export async function getTags() {
-    return makeAuthenticatedRequest('/tags/');
+  return api.get('/tags/');
 }
 
 export async function requestFeedback(message) {
-    return makeAuthenticatedRequest('/feedback-requests/', {
-        method: 'POST',
-        body: JSON.stringify({ message }),
-    });
+  return api.post('/feedback-requests/', { message });
 }
 
 export async function getFeedbackRequests() {
-    return makeAuthenticatedRequest('/feedback-requests/manager/');
+  return api.get('/feedback-requests/manager/');
 }
 
 export async function getCurrentUser() {
-    return makeAuthenticatedRequest('/users/me/');
+  return api.get('/users/me/');
 }
 
 export async function exportFeedbackToPdf(feedbackId) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/feedback/${feedbackId}/pdf`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+  const response = await api.get('/feedback/' + feedbackId + '/pdf', {
+    responseType: 'blob'
+  });
 
-    if (!response.ok) {
-        throw new Error('Failed to download PDF');
-    }
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `feedback_${feedbackId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-}
-
-export async function makeAuthenticatedRequest(url, options = {}) {
-    const token = localStorage.getItem('token');
-    const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
-
-    if (response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-        throw new Error('Unauthorized');
-    }
-    
-    if (!response.ok) {
-        const error = new Error(`HTTP error! status: ${response.status}`);
-        try {
-            const errorData = await response.json();
-            error.detail = errorData.detail;
-        } catch (e) {
-            // ignore
-        }
-        throw error;
-    }
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-        return null;
-    }
-    return response.json();
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'feedback_' + feedbackId + '.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }
