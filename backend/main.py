@@ -90,6 +90,10 @@ def seed_db(db: Session = Depends(get_db)):
     crud.get_or_create_tags(db, tags_to_create)
     return {"message": "Database seeded successfully with tags."}
 
+@app.get("/")
+def read_root():
+    return {"message": "Feedback System API is running"}
+
 @app.post("/token", response_model=schemas.Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     print(f"Login attempt for email: {form_data.username}")
