@@ -11,7 +11,7 @@ api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
-  }
+    }
   return config;
 }, error => {
   return Promise.reject(error);
@@ -46,7 +46,7 @@ api.interceptors.response.use(
     } else {
       // Something happened in setting up the request that triggered an Error
       return Promise.reject(error);
-    }
+}
   }
 );
 
@@ -113,11 +113,11 @@ export const exportFeedbackToPdf = async (feedbackId) => {
   });
 
   const url = window.URL.createObjectURL(new Blob([response]));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `feedback_${feedbackId}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `feedback_${feedbackId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
 };

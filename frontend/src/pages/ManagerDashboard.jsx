@@ -11,7 +11,6 @@ import {
   getFeedbackRequests, 
   getFeedbackForManager, 
   getPendingRequests, 
-  createFeedback, 
   addComment, 
   createTag, 
   exportFeedbackToPdf, 

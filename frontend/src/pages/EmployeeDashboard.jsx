@@ -38,7 +38,7 @@ const EmployeeDashboard = ({ user, setUser }) => {
 
   useEffect(() => {
     if (user && user.id) {
-      fetchTimeline();
+    fetchTimeline();
     }
   }, [user?.id]);
 
@@ -219,11 +219,11 @@ const EmployeeDashboard = ({ user, setUser }) => {
                           ...(acknowledged ? acknowledgedStyle : {})
                         }}>
                           <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            {acknowledged && (
+                          {acknowledged && (
                               <div style={{...acknowledgmentBadgeStyle, position: 'static' }}>
-                                ✓ Acknowledged
-                              </div>
-                            )}
+                              ✓ Acknowledged
+                            </div>
+                          )}
                              <span style={{ 
                                 ...sentimentBadgeStyle,
                                 backgroundColor: sentimentColors[fb.sentiment],

@@ -42,6 +42,7 @@ class FeedbackBase(BaseModel):
 class FeedbackCreate(FeedbackBase):
     employee_id: str
     tag_ids: Optional[List[int]] = []
+    request_id: Optional[int] = None
 
 class FeedbackUpdate(BaseModel):
     strengths: Optional[str] = None

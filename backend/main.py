@@ -62,9 +62,13 @@ app = FastAPI(lifespan=lifespan)
 
 # CORS middleware
 origins = [
+    "http://localhost",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
     "https://feedback-system-frontend.onrender.com"
 ]
 
@@ -181,19 +185,18 @@ def reset_user_password(email: str, new_password: str, db: Session = Depends(get
 
 @app.post("/feedback/", response_model=schemas.FeedbackOut)
 def create_feedback(
-    feedback: schemas.FeedbackCreate, 
-    request_id: Optional[int] = None,
-    db: Session = Depends(get_db), 
+    feedback: schemas.FeedbackCreate,
+    db: Session = Depends(get_db),
     current_user: schemas.UserOut = Depends(auth.get_current_user)
 ):
     if current_user.role != schemas.RoleEnum.manager:
         raise HTTPException(status_code=403, detail="Only managers can create feedback")
-    
+
     new_feedback = crud.create_feedback(db=db, feedback=feedback, manager_id=current_user.id)
-    
-    if request_id:
-        crud.close_feedback_request(db, request_id)
-        
+
+    if feedback.request_id:
+        crud.close_feedback_request(db, feedback.request_id)
+
     return new_feedback
 
 @app.get("/feedback/employee/", response_model=List[schemas.FeedbackOut])
