@@ -231,6 +231,13 @@ const EmployeeDashboard = ({ user, setUser }) => {
                                 {sentimentLabels[fb.sentiment]}
                               </span>
                           </div>
+                          {/* Export to PDF Button */}
+                          <button
+                            style={{ ...buttonStyle, backgroundColor: '#007bff', marginBottom: '10px' }}
+                            onClick={() => exportFeedbackToPdf(fb.id)}
+                          >
+                            Export to PDF
+                          </button>
                           
                           <div style={{ 
                             display: 'flex', 

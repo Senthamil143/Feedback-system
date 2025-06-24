@@ -648,12 +648,15 @@ const ManagerDashboard = ({ user, setUser }) => {
                                 
                                 <button 
                                   onClick={() => handleEditFeedback(fb)}
+                                  disabled={hasAcknowledgement}
                                   style={{ 
                                     ...buttonStyle, 
-                                    backgroundColor: '#17a2b8',
+                                    backgroundColor: hasAcknowledgement ? '#cccccc' : '#17a2b8',
                                     padding: '6px 12px',
                                     fontSize: '12px',
-                                    marginBottom: '10px'
+                                    marginBottom: '10px',
+                                    cursor: hasAcknowledgement ? 'not-allowed' : 'pointer',
+                                    opacity: hasAcknowledgement ? 0.6 : 1
                                   }}
                                 >
                                   Edit Feedback

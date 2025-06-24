@@ -1,5 +1,11 @@
 # Feedback System
 
+## Stack
+- **Backend:** Python, FastAPI, SQLAlchemy, SQLite, Uvicorn
+- **Frontend:** React, Vite, Axios, React Router, React Markdown
+- **Containerization:** Docker (multi-stage build for backend and frontend)
+- **Authentication:** JWT-based, role-based access (Manager/Employee)
+
 A lightweight internal feedback system with role-based access control, built with FastAPI (backend) and React (frontend).
 
 ## Features
